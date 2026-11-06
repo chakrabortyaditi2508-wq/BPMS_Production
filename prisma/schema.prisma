@@ -1,0 +1,65 @@
+// Prisma Schema for BPMS (Building Production Management System) - Phase 1: Authentication & User Access Governance
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  PROJECT_MANAGER
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id              String      @id @default(cuid())
+  googleId        String      @unique
+  email           String      @unique
+  name            String
+  avatar          String?
+  status          UserStatus  @default(PENDING)
+  role            UserRole    @default(VIEWER)
+  organization    String?
+  discipline      String?
+  accessReason    String?
+  rejectionReason String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  lastActiveAt    DateTime?   @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  auditLogs       AdminAuditLog[] @relation("TargetUserLogs")
+  createdLogs     AdminAuditLog[] @relation("ActorUserLogs")
+
+  @@index([email])
+  @@index([status])
+  @@index([googleId])
+}
+
+model AdminAuditLog {
+  id              String   @id @default(cuid())
+  action          String   // "approved" | "rejected" | "role_changed" | "user_deleted"
+  targetUserEmail String
+  targetUserName  String
+  performedBy     String
+  details         String
+  timestamp       DateTime @default(now())
+
+  targetUser      User?    @relation("TargetUserLogs", fields: [targetUserEmail], references: [email], onDelete: Cascade)
+  actorUser       User?    @relation("ActorUserLogs", fields: [performedBy], references: [email], onDelete: SetNull)
+
+  @@index([targetUserEmail])
+  @@index([timestamp])
+}

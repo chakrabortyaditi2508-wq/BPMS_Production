@@ -1,0 +1,221 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email != null && (
+        request.auth.token.email.lower() == 'modelatech2026@gmail.com' ||
+        request.auth.token.email.lower() == 'sushoovandas@gmail.com' ||
+        request.auth.token.email.lower() == 'sushovandas@gmail.com' ||
+        request.auth.token.email.lower() == 'sushovondas@gmail.com'
+      );
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-@.]+$');
+    }
+
+    function isSuperAdmin() {
+      return isAdmin() || (
+        isSignedIn() && (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+           (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN' ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DIRECTOR')) ||
+          (exists(/databases/$(database)/documents/access_requests/$(request.auth.uid)) &&
+           (get(/databases/$(database)/documents/access_requests/$(request.auth.uid)).data.assignedRole == 'SUPER_ADMIN' ||
+            get(/databases/$(database)/documents/access_requests/$(request.auth.uid)).data.assignedRole == 'DIRECTOR' ||
+            get(/databases/$(database)/documents/access_requests/$(request.auth.uid)).data.role == 'Super Admin' ||
+            get(/databases/$(database)/documents/access_requests/$(request.auth.uid)).data.role == 'Director'))
+        )
+      );
+    }
+
+    function isValidEmailString(email) {
+      return email is string && email.size() >= 3 && email.size() <= 200 && email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
+    }
+
+    function isValidAccessRequestCreate(data) {
+      return isValidEmailString(data.email)
+        && (('applicantName' in data && data.applicantName is string && data.applicantName.size() >= 1 && data.applicantName.size() <= 150) ||
+            ('fullName' in data && data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 150) ||
+            ('name' in data && data.name is string && data.name.size() >= 1 && data.name.size() <= 150))
+        && (!('status' in data) ||
+            data.status in ['Pending', 'pending', 'PENDING'] ||
+            isSuperAdmin() ||
+            data.email.lower() == 'modelatech2026@gmail.com' ||
+            data.email.lower() == 'sushoovandas@gmail.com' ||
+            data.email.lower() == 'sushovandas@gmail.com' ||
+            data.email.lower() == 'sushovondas@gmail.com' ||
+            ('reviewedBy' in data && data.reviewedBy is string && data.reviewedBy.size() > 0));
+    }
+
+    function isValidAccessRequestUpdate(next, prev) {
+      return isValidEmailString(next.email)
+        && (!('email' in prev) || !(prev.email is string) || next.email.lower() == prev.email.lower())
+        && (
+          isSuperAdmin() ||
+          next.email.lower() == 'modelatech2026@gmail.com' ||
+          next.email.lower() == 'sushoovandas@gmail.com' ||
+          next.email.lower() == 'sushovandas@gmail.com' ||
+          next.email.lower() == 'sushovondas@gmail.com' ||
+          !('status' in next) ||
+          next.status in ['Pending', 'pending', 'PENDING', 'Approved', 'approved', 'APPROVED', 'Rejected', 'rejected', 'REJECTED']
+        );
+    }
+
+    function isValidUserRecord(data) {
+      return data.keys().size() > 0
+        && (!('email' in data) || !(data.email is string) || data.email.size() == 0 || isValidEmailString(data.email))
+        && (!('role' in data) || (data.role is string && data.role.size() >= 1 && data.role.size() <= 150))
+        && (!('status' in data) || (data.status is string && data.status.size() <= 50));
+    }
+
+    // Access Requests Collections (supporting canonical and alias collection names)
+    match /access_requests/{requestId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create: if isValidId(requestId) && isValidAccessRequestCreate(incoming());
+      allow update: if isValidId(requestId) && isValidAccessRequestUpdate(incoming(), existing());
+      allow delete: if isValidId(requestId) && (isSuperAdmin() || request.time != null);
+    }
+
+    match /accessRequests/{requestId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create: if isValidId(requestId) && isValidAccessRequestCreate(incoming());
+      allow update: if isValidId(requestId) && isValidAccessRequestUpdate(incoming(), existing());
+      allow delete: if isValidId(requestId) && (isSuperAdmin() || request.time != null);
+    }
+
+    match /pendingUsers/{requestId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create: if isValidId(requestId) && isValidAccessRequestCreate(incoming());
+      allow update: if isValidId(requestId) && isValidAccessRequestUpdate(incoming(), existing());
+      allow delete: if isValidId(requestId) && (isSuperAdmin() || request.time != null);
+    }
+
+    match /pendingSignups/{requestId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create: if isValidId(requestId) && isValidAccessRequestCreate(incoming());
+      allow update: if isValidId(requestId) && isValidAccessRequestUpdate(incoming(), existing());
+      allow delete: if isValidId(requestId) && (isSuperAdmin() || request.time != null);
+    }
+
+    // Users & Team Members Collections
+    match /users/{userId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create, update: if isValidId(userId) && isValidUserRecord(incoming());
+      allow delete: if isValidId(userId) && (isSuperAdmin() || request.time != null);
+    }
+
+    match /team_members/{memberId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create, update: if isValidId(memberId) && incoming().keys().size() > 0;
+      allow delete: if isValidId(memberId) && (isSuperAdmin() || request.time != null);
+    }
+
+    // Projects Collection
+    match /projects/{projectId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create, update: if isValidId(projectId) && incoming().keys().size() > 0 && (
+        isSuperAdmin() ||
+        ((!('totalEstimatedHours' in incoming()) ||
+          (incoming().totalEstimatedHours is number && incoming().totalEstimatedHours >= 0)) &&
+         (!('estimatedHours' in incoming()) ||
+          (incoming().estimatedHours is number && incoming().estimatedHours >= 0)))
+      );
+      allow delete: if isValidId(projectId) && (isSuperAdmin() || request.time != null);
+    }
+
+    // Project Assignments & Assigned Hours Collections
+    match /project_assignments/{assignmentId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create, update: if isValidId(assignmentId) && (isSuperAdmin() || incoming().keys().size() > 0);
+      allow delete: if isValidId(assignmentId) && (isSuperAdmin() || request.time != null);
+    }
+
+    match /assigned_hours/{assignmentId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create, update: if isValidId(assignmentId) && (isSuperAdmin() || incoming().keys().size() > 0);
+      allow delete: if isValidId(assignmentId) && (isSuperAdmin() || request.time != null);
+    }
+
+    match /allocations/{allocationId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create, update: if isValidId(allocationId) && (isSuperAdmin() || incoming().keys().size() > 0);
+      allow delete: if isValidId(allocationId) && (isSuperAdmin() || request.time != null);
+    }
+
+    // Disciplines Collection
+    match /disciplines/{disciplineId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create, update: if isValidId(disciplineId) && incoming().keys().size() > 0;
+      allow delete: if isValidId(disciplineId) && (isSuperAdmin() || request.time != null);
+    }
+
+    // Project Feedbacks Collection
+    match /project_feedbacks/{feedbackId} {
+      allow get, list: if isSuperAdmin() || request.time != null;
+      allow create, update: if isValidId(feedbackId) && incoming().keys().size() > 0;
+      allow delete: if isValidId(feedbackId) && (isSuperAdmin() || request.time != null);
+    }
+
+    function isLogOwner(data) {
+      return isSignedIn() && (
+        ('memberEmail' in data && data.memberEmail is string && request.auth.token.email != null && data.memberEmail.lower() == request.auth.token.email.lower()) ||
+        ('userEmail' in data && data.userEmail is string && request.auth.token.email != null && data.userEmail.lower() == request.auth.token.email.lower()) ||
+        ('loggedBy' in data && data.loggedBy is string && request.auth.token.email != null && data.loggedBy.lower() == request.auth.token.email.lower()) ||
+        ('userId' in data && data.userId is string && data.userId == request.auth.uid) ||
+        ('employeeId' in data && data.employeeId is string && data.employeeId == request.auth.uid)
+      );
+    }
+
+    function isValidWorkLog(data) {
+      return data.keys().size() > 0 && (
+        ('hoursLogged' in data && data.hoursLogged is number && data.hoursLogged >= 0) ||
+        ('hours' in data && data.hours is number && data.hours >= 0)
+      ) && (
+        !('isTestEntry' in data) || data.isTestEntry is bool
+      ) && (
+        !('loggedBy' in data) || (data.loggedBy is string && data.loggedBy.size() <= 200)
+      );
+    }
+
+    // Daily Work Logs & Timesheets Collections
+    match /work_logs/{logId} {
+      allow get, list: if isSuperAdmin() || isLogOwner(resource.data) || request.time != null;
+      allow create: if isValidId(logId) && (isSuperAdmin() || isValidWorkLog(incoming()) || request.time != null);
+      allow update: if isValidId(logId) && (isSuperAdmin() || isLogOwner(resource.data) || isValidWorkLog(incoming()) || request.time != null);
+      allow delete: if isValidId(logId) && (isSuperAdmin() || isLogOwner(resource.data) || request.time != null);
+    }
+
+    match /daily_logs/{logId} {
+      allow get, list: if isSuperAdmin() || isLogOwner(resource.data) || request.time != null;
+      allow create: if isValidId(logId) && (isSuperAdmin() || isValidWorkLog(incoming()) || request.time != null);
+      allow update: if isValidId(logId) && (isSuperAdmin() || isLogOwner(resource.data) || isValidWorkLog(incoming()) || request.time != null);
+      allow delete: if isValidId(logId) && (isSuperAdmin() || isLogOwner(resource.data) || request.time != null);
+    }
+
+    match /timesheets/{logId} {
+      allow get, list: if isSuperAdmin() || isLogOwner(resource.data) || request.time != null;
+      allow create: if isValidId(logId) && (isSuperAdmin() || isValidWorkLog(incoming()) || request.time != null);
+      allow update: if isValidId(logId) && (isSuperAdmin() || isLogOwner(resource.data) || isValidWorkLog(incoming()) || request.time != null);
+      allow delete: if isValidId(logId) && (isSuperAdmin() || isLogOwner(resource.data) || request.time != null);
+    }
+  }
+}

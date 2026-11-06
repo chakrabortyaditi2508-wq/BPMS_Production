@@ -1,0 +1,319 @@
+{
+  "entities": {
+    "AccessRequest": {
+      "title": "AccessRequest",
+      "description": "HRMS Access request record for Google-authenticated users",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "description": "Full name of the user requesting access",
+          "maxLength": 150
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name retrieved from Google Auth",
+          "maxLength": 150
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address retrieved from Google Auth",
+          "maxLength": 150
+        },
+        "discipline": {
+          "type": "string",
+          "description": "User discipline or organization division",
+          "maxLength": 150
+        },
+        "reasonForAccess": {
+          "type": "string",
+          "description": "Reason for requesting sign-in access",
+          "maxLength": 500
+        },
+        "uid": {
+          "type": "string",
+          "description": "Firebase user UID",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of access request creation",
+          "maxLength": 64
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp of access request",
+          "maxLength": 64
+        },
+        "requestedAt": {
+          "type": "string",
+          "description": "ISO timestamp of access request",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "description": "Access approval status",
+          "enum": ["pending", "Pending", "approved", "Approved", "rejected", "Rejected", "APPROVED", "REJECTED"]
+        },
+        "role": {
+          "type": "string",
+          "description": "Assigned employee role upon approval",
+          "maxLength": 64
+        },
+        "reviewedBy": {
+          "type": "string",
+          "description": "UID or email of HR/Admin reviewer",
+          "maxLength": 150
+        },
+        "reviewedAt": {
+          "type": "string",
+          "description": "ISO timestamp of review",
+          "maxLength": 64
+        }
+      },
+      "required": ["email", "status"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role and access details",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase User ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name",
+          "maxLength": 150
+        },
+        "email": {
+          "type": "string",
+          "description": "User email",
+          "maxLength": 150
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Approved", "Rejected"]
+        },
+        "role": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["uid", "name", "email", "status"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "BIM Project record with estimated hours and status",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "code": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "projectName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "clientName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "estimatedHours": {
+          "type": "number"
+        },
+        "totalEstimatedHours": {
+          "type": "number"
+        },
+        "changedHours": {
+          "type": "number"
+        },
+        "additionalHours": {
+          "type": "number"
+        },
+        "totalHoursLogged": {
+          "type": "number"
+        },
+        "totalCompletedHours": {
+          "type": "number"
+        },
+        "plannedDeliveryDate": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["projectName", "status", "estimatedHours"]
+    },
+    "ProjectAssignment": {
+      "title": "ProjectAssignment",
+      "description": "Assignment of team members and hours to projects",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "projectId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "projectName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "employeeId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "allocatedHours": {
+          "type": "number"
+        }
+      },
+      "required": ["projectId", "employeeId"]
+    },
+    "Discipline": {
+      "title": "Discipline",
+      "description": "BIM and Engineering Discipline category",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100
+        }
+      },
+      "required": ["name"]
+    },
+    "DailyWorkLog": {
+      "title": "DailyWorkLog",
+      "description": "Daily timesheet work log entry submitted by a team member for project tasks and LOD tracking",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "employeeId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "employeeName": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "projectId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "projectName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "hoursLogged": {
+          "type": "number"
+        },
+        "discipline": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "activityType": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "taskName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "lodStage": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "billable": {
+          "type": "boolean"
+        },
+        "timestamp": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "memberEmail": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "isTestEntry": {
+          "type": "boolean",
+          "description": "Whether this daily log entry is marked as a test entry"
+        },
+        "loggedBy": {
+          "type": "string",
+          "description": "Email or identifier of the user who logged the entry",
+          "maxLength": 150
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of when the log entry was created",
+          "maxLength": 64
+        }
+      },
+      "required": ["employeeId", "projectId", "date", "hoursLogged"]
+    }
+  },
+  "firestore": {
+    "/access_requests/{requestId}": {
+      "schema": "AccessRequest",
+      "description": "Collection of access requests submitted by users for HR review"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection of registered application users"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Collection of official BIM projects and estimated hours"
+    },
+    "/project_assignments/{assignmentId}": {
+      "schema": "ProjectAssignment",
+      "description": "Collection of project resource and hour assignments"
+    },
+    "/disciplines/{disciplineId}": {
+      "schema": "Discipline",
+      "description": "Collection of active BIM disciplines"
+    },
+    "/work_logs/{logId}": {
+      "schema": "DailyWorkLog",
+      "description": "Collection of daily work log timesheet records submitted by team members"
+    }
+  }
+}

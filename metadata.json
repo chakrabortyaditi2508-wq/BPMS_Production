@@ -1,0 +1,8 @@
+{
+  "name": "(Launched)_2nd Remix Production Pulse_Rev 00",
+  "description": "Production Pulse - Enterprise BIM project status tracker with multi-project \u0026 employee hour logging, estimated vs completed hour analytics, real-time visual dashboards, and automated AI stakeholder reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
